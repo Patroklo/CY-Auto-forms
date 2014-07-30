@@ -54,6 +54,19 @@ class Cy_base_form_model extends CI_Model
 			$this->set_options($options);
 		}
 	}
+
+
+	 function form_definition($options = array())
+	 {
+	 	// all the data defined as in the previous comments
+	 	
+	 	$local_options = array();
+		
+		$options = array_merge($options, $local_options);
+		
+		$this->set_options($options);
+	 }
+
 	
 	function set_options($options)
 	{
@@ -96,10 +109,6 @@ class Cy_base_form_model extends CI_Model
 	 * CRUD functions
 	 */
 
-	protected function update($data) {}
-
-	protected function insert($data) {}
-	
 	
 	function save($data = NULL)
 	{
@@ -110,14 +119,8 @@ class Cy_base_form_model extends CI_Model
 		
 		$data = $this->sanitize_data($data);
 		
-		if($this->is_loaded() === TRUE)
-		{
-			return $this->update($data);
-		}
-		else
-		{
-			return $this->insert($data);
-		}
+		return $data;
+		
 	}
 
 
@@ -270,9 +273,9 @@ class Cy_base_form_model extends CI_Model
 		
 		if(empty($this->rules))
 		{
-		 	foreach($this->fields as $field)
+		 	foreach($this->fields as $key => $field)
 			{
-				$config[$field->get_id()] = array('field' => $field->get_name(), 'label' => $field->get_name(), 'rules' => $field->get_rules($this->is_loaded()));
+				$this->add_rule($key);
 			}
 		}
 		
@@ -280,11 +283,24 @@ class Cy_base_form_model extends CI_Model
 		{
 			foreach($rules as $key => $rule)
 			{
-				$config[$key] = $config[$key] + $rule;
+				$this->rules[$key] = $config[$key] + $rule;
 			}
 		}
+
+	 }
+	 
+	 /**
+	  * adds rule for one field
+	  *
+	  * @return void
+	  * @author  Patroklo
+	  */
+	  
+	 function add_rule($field_id)
+	 {
+	 	$field = $this->fields[$field_id];
 		
-		$this->rules = $config;
+	 	$this->rules[$field->get_id()] = array('field' => $field->get_name(), 'label' => $field->get_name(), 'rules' => $field->get_rules($this->is_loaded()));
 	 }
 	 
 	 
@@ -489,23 +505,6 @@ class Cy_base_form_model extends CI_Model
 	{
 		throw new Exception($message);
 	}
-	
-	/*
-	**
-	 * returns the field object
-	 *
-	 * @return Form_Field object / FALSE
-	 * @author Patroklo
-	 *
-	function field($field_id)
-	{
-		if(array_key_exists($field_id, $this->fields))
-		{
-			return $this->fields[$field_id];
-		}
-		
-		return FALSE;
-	}
-    */
+
 	
 }

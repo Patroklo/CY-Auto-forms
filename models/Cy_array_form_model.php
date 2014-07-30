@@ -66,13 +66,7 @@ class Cy_array_form_model extends Cy_base_form_model
 	  * 			[additional_parameters] 	=> (optional) additional parameters for the html form
 	  *
 	  */
-	 
-	 function form_definition($options = NULL)
-	 {
-	 	// all the data defined as in the previous comments
-		
-		$this->set_options($options);
-	 }
+
 	 
 	 protected $objects;
 	 
@@ -83,13 +77,11 @@ class Cy_array_form_model extends Cy_base_form_model
 	 * @author  Patroklo
 	 */
 
+
+	 
 	function set_options($options)
 	{
-		if(array_key_exists('field_type', $options))
-		{
-			$this->set_field_type($options['field_type']);
-		}
-		
+
 		// we set the object names in the array
 		// objects won't be setted until the method carga it's called or the $_post it's read
 		// then the object will be made empty
@@ -107,6 +99,11 @@ class Cy_array_form_model extends Cy_base_form_model
 			}
 		}
 		
+		$new_options = array();
+		
+		
+		// change the fields sub array in order to be comprensible for
+		// the parent
 		
 		if(array_key_exists('fields', $options))
 		{
@@ -124,11 +121,15 @@ class Cy_array_form_model extends Cy_base_form_model
 					$this->set_upload($field_data);
 				}
 				
-				$this->set($field_data['id'], $field_data['options']);
+				$new_options[$field_data['id']] =  $field_data['options'];
 			}
 			
-			reset($this->fields);
+			$options['fields'] = $new_options;
+			
 		}
+		
+		parent::set_options($options);
+		
 	}
 
 	/**
@@ -284,15 +285,11 @@ class Cy_array_form_model extends Cy_base_form_model
 	 * @return void
 	 * @author  Patroklo
 	 */
-
+	 
 	function save($data = NULL)
 	{
-		if($data === NULL)
-		{
-			$data = $this->post_data;
-		}
 		
-		$data = $this->sanitize_data($data);
+		$data = parent::save($data);
 		
 		// check each object if it's initialized. If it's not, then
 		// create a new empty object for it.
@@ -389,6 +386,28 @@ class Cy_array_form_model extends Cy_base_form_model
 				$this->_check_object_loaded_file($key);
 			}
 		}
+
+		// check if it's a loaded object in order to give the fields a value
+		
+		if($this->objects[$object_alias]['data']->_object_loaded())
+		{
+			foreach($this->fields as &$field)
+			{
+				$field_options = $field->get_options();
+				
+				if(array_key_exists('object_type', $field_options) && $field_options['object_type'] == $object_alias)
+				{
+					$object_name 		= $field_options['object_type'];
+					$field_object_name 	= $field_options['fieldName'];
+		
+					if(!empty($this->objects[$object_name]['data']) && !$this->is_file_object($this->objects[$object_name]))
+					{
+						$object_value = $this->objects[$object_name]['data']->get_data($field_object_name);
+						$field->set_value($object_value);
+					}
+				}
+			}
+		}
 	}
 	
 	function get_object($object_alias)
@@ -408,67 +427,32 @@ class Cy_array_form_model extends Cy_base_form_model
 		return $return_object;
 		
 	}
-	
-	
-	function show_field($field_name)
-	{
-		$field = $this->fields[$field_name];
-		
-		$field_options = $this->fields[$field_name]->get_options();
-		
-		$optional_value = NULL;
-		
+
+
+	 
+	 function add_rule($field_id)
+	 {
+
+		$field = $this->fields[$field_id];
+
+		$field_options = $field->get_options();
+
 		if(array_key_exists('object_type', $field_options))
 		{
 			$object_name 		= $field_options['object_type'];
-			$field_object_name 	= $field_options['fieldName'];
-
-			if(!empty($this->objects[$object_name]['data']) && !$this->is_file_object($this->objects[$object_name]))
-			{
-				$optional_value	= $this->objects[$object_name]['data']->get_data($field_object_name);
-			}
 			
-		}
-				
-		$field->set_value(set_value($field_name, $optional_value));
-		
-		return $field->show();
-	}
-	
-	
-	 function add_rules($rules = NULL)
-	 {
-	 	$config = array();
-		
-		if(empty($this->rules))
-		{
-		 	foreach($this->fields as $key => $field)
+			if($this->objects[$object_name]['data'] !== NULL)
 			{
-				$field_options = $field->get_options();
-			
-				if(array_key_exists('object_type', $field_options))
-				{
-					$object_name 		= $field_options['object_type'];
-					
-					if($this->objects[$object_name]['data'] !== NULL)
-					{
-						$this->set_loaded($this->objects[$object_name]['data']->_object_loaded());
-					}
-				}
+				$this->set_loaded($this->objects[$object_name]['data']->_object_loaded());
+			}
+		}
+		else
+		{
+			$this->set_loaded(FALSE);
+		}
 
-				$config[$field->get_id()] = array('field' => $field->get_name(), 'label' => $field->get_name(), 'rules' => $field->get_rules($this->is_loaded()));
-			}
-		}
-		
-		if(!empty($rules) && is_array($rules))
-		{
-			foreach($rules as $key => $rule)
-			{
-				$config[$key] = $config[$key] + $rule;
-			}
-		}
-		
-		$this->rules = $config;
+
+		parent::add_rule($field_id);
 	 }
 	
 }
