@@ -6,16 +6,7 @@ require_once APPPATH.'modules/cy_form_generator/models/Cy_base_form_model.php';
 class Cy_array_form_model extends Cy_base_form_model
 {
 	
-	
-	function __construct($options = NULL)
-	{
-		parent::__construct($options);
-		
-		$this->form_definition();
-	}
-	
-	
-	
+
 	
 	// Database type => Correcaminos
 	
@@ -454,5 +445,13 @@ class Cy_array_form_model extends Cy_base_form_model
 
 		parent::add_rule($field_id);
 	 }
+	 
+	 
+	function field_set_value($field_id, $value = NULL)
+	{
+		// empty for this class
+	}
+	 
+	 
 	
 }

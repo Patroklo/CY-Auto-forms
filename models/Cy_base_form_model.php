@@ -40,14 +40,17 @@ class Cy_base_form_model extends CI_Model
 	/* 
 	 * Field format:
 	 * 
-	 * 		id (unique) (string) (field name and id for the html labels)
-	 * 		options (array)
+	 * 		key (unique) (string)
+	 * 
+	 * 		array(
 	 * 					[type] 					=> string (field form type, like text, textarea, checkbox...)
 	 * 					[rules]					=> string or array
 	 * 														string => (rules for codeigniter's form_validation)
 	 * 														array => array('insert' => (string), 'update' => (string))
+	 * 					[id]					=> (optional) (unique) (string) (if not defined it's not defined, key will be used as id)
 	 * 					[value]					=> (optional) mixed (field data will be set in the form)
 	 * 					[additional_parameters] => (optional) additional parameters for the html form
+	 *		)
 	 * 
 	 */
 	 
@@ -55,15 +58,16 @@ class Cy_base_form_model extends CI_Model
 	  * (only for file objects)
 	  * File field format:
 	  * 
-	  * 	id (unique) (string) (if fieldName it's not defined, will be used to define file field name defined in the _classData method)
-	  * 	options (array)
+	  * 	key (unique) (string)
+	  * 	array(
 	  * 			[type]						=> (string) file type must be upload
 	  * 			[upload]					=> (boolean) (optional) TRUE|FALSE (true in this case, duh!)
+	  * 			[id]						=> (optional) (unique) (string) (if not defined it's not defined, key will be used as id)
 	  * 			[rules]						=> string or array
 	  * 														string => (rules for codeigniter's form_validation)
 	  * 														array => array('insert' => (string), 'update' => (string))
 	  * 			[additional_parameters] 	=> (optional) additional parameters for the html form
-	  *
+	  *		)
 	  */
 
 	
@@ -84,14 +88,7 @@ class Cy_base_form_model extends CI_Model
 		
 		$this->load->library('cy_form_generator/Form_field');
 		
-		if(empty($options))
-		{
-			return FALSE;
-		}
-		else
-		{
-			$this->set_options($options);
-		}
+		$this->form_definition();
 	}
 
 
@@ -102,7 +99,7 @@ class Cy_base_form_model extends CI_Model
 	 	$local_options = array();
 		
 		$options = array_merge($options, $local_options);
-		
+
 		$this->set_options($options);
 	 }
 
@@ -187,7 +184,7 @@ class Cy_base_form_model extends CI_Model
 		$this->add_rules();
 		
 		$this->activate_form_rules();
-		
+
 		if($this->check_errors() == FALSE)
 		{
 			return FALSE;
@@ -230,7 +227,7 @@ class Cy_base_form_model extends CI_Model
 			{
 				$field->set_error(form_error($field->get_id()));
 			}
-			
+
 			return FALSE;
 			
 		}
@@ -386,6 +383,11 @@ class Cy_base_form_model extends CI_Model
 		}
 		
 		$options['id'] = $field_id;
+		if(!array_key_exists('name', $options))
+		{
+			$options['name'] = $options['id'];
+		}
+		
 		
 		if(!array_key_exists($field_id, $this->fields))
 		{
@@ -408,6 +410,31 @@ class Cy_base_form_model extends CI_Model
 			$this->fields[$field_id]->set_options($options);
 		}
 	}
+
+	/**
+	 * sets a field with a value
+	 *
+	 * @return void
+	 * @author Patroklo
+	 */
+
+	function field_set_value($field_id, $value = NULL)
+	{
+		if($value === NULL and is_array($field_id))
+		{
+			foreach($field_id as $key => $value)
+			{
+				$this->field_set_value($key, $value);
+			}
+		}
+		
+		if(array_key_exists($field_id, $this->fields))
+		{
+			$field = $this->fields[$field_id];
+			$field->set_value($value);
+		}
+	}
+
 	
 	/**
 	 * removes the field from the field list
@@ -521,9 +548,9 @@ class Cy_base_form_model extends CI_Model
 	function show_field($field_name)
 	{
 		$field = $this->fields[$field_name];
-		
+
 		$field->set_value(set_value($field_name, $field->get_value()));
-		
+
 		return $field->show();
 		
 	}
