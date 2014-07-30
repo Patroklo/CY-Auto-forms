@@ -27,6 +27,45 @@ class Cy_base_form_model extends CI_Model
 	
 	protected $error 			= FALSE;
 	
+
+
+	/*
+	 * Data creation format
+	 * 		
+	 * 		[field_type]	=> (optional) (string) field form type definition for /libraries/Form_field.php
+	 * 		[fields]		=> (array) of Field format
+	 * 
+	 */
+	 
+	/* 
+	 * Field format:
+	 * 
+	 * 		id (unique) (string) (field name and id for the html labels)
+	 * 		options (array)
+	 * 					[type] 					=> string (field form type, like text, textarea, checkbox...)
+	 * 					[rules]					=> string or array
+	 * 														string => (rules for codeigniter's form_validation)
+	 * 														array => array('insert' => (string), 'update' => (string))
+	 * 					[value]					=> (optional) mixed (field data will be set in the form)
+	 * 					[additional_parameters] => (optional) additional parameters for the html form
+	 * 
+	 */
+	 
+	 /*
+	  * (only for file objects)
+	  * File field format:
+	  * 
+	  * 	id (unique) (string) (if fieldName it's not defined, will be used to define file field name defined in the _classData method)
+	  * 	options (array)
+	  * 			[type]						=> (string) file type must be upload
+	  * 			[upload]					=> (boolean) (optional) TRUE|FALSE (true in this case, duh!)
+	  * 			[rules]						=> string or array
+	  * 														string => (rules for codeigniter's form_validation)
+	  * 														array => array('insert' => (string), 'update' => (string))
+	  * 			[additional_parameters] 	=> (optional) additional parameters for the html form
+	  *
+	  */
+
 	
 	//messages
 	
