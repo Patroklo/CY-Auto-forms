@@ -18,6 +18,7 @@ class Cy_base_form_model extends CI_Model
 	
 	protected $rules;
 	
+	protected $sanitized_data;
 	
 	
 	// saves the data with the valid method if true
@@ -153,9 +154,9 @@ class Cy_base_form_model extends CI_Model
 			$data = $this->post_data;
 		}
 		
-		$data = $this->sanitize_data($data);
+		$this->sanitize_data($data);
 		
-		return $data;
+		return $this->sanitized_data;
 		
 	}
 
@@ -182,7 +183,7 @@ class Cy_base_form_model extends CI_Model
 
 		//add rules of the form validation
 		$this->add_rules();
-		
+
 		$this->activate_form_rules();
 
 		if($this->check_errors() == FALSE)
@@ -284,7 +285,9 @@ class Cy_base_form_model extends CI_Model
 			}
 		}
 	 	
-		return $data;
+		$this->sanitized_data = $data;
+		
+		return $this->sanitized_data;
 	}
 	 
 
@@ -572,5 +575,86 @@ class Cy_base_form_model extends CI_Model
 		throw new Exception($message);
 	}
 
-	
+
+
+	   /**
+	    * move an uploaded file
+	    * 
+	    * @param form's field name of the file
+	    * @param string $name the file name
+	    * @param destination $name the file path to move to
+	    * @return array
+	    */
+		public function move_file($field_name, $name, $destination)
+		{
+			$this->load->library('upload');
+			
+			$config['upload_path'] 		= $destination;
+			$config['file_name']		= $name;
+			$config['allowed_types'] 	= '*';
+			
+			$this->upload->initialize($config);
+			
+			if($this->upload->do_upload($field_name))
+			{
+				return $this->upload->data();
+			}
+			
+			return FALSE;
+		}
+		
+	   /**
+	    * move and resize an uploaded image
+	    * 
+	    * @param form's field name of the file
+	    * @param string $name the file name
+	    * @param destination $name the file path to move to
+	    * @param integer $width the max width of resized image
+	    * @param integer $height the max height of resized image
+	    * @param boolean $ratio maintain aspect ratio
+	    * @return array
+	    */
+		public function move_image($field_name, $name, $destination, $width=80, $height=80, $ratio=TRUE)
+		{		
+			$this->load->library('upload');
+			
+			$config['upload_path'] 		= $destination;
+			$config['file_name']		= $name;
+			$config['allowed_types'] 	= '*';
+			
+			$this->upload->initialize($config);
+			
+			if($this->upload->do_upload($field_name))
+			{
+				$file = $this->upload->data();
+				
+				if(substr($destination, -1) != '/')
+				{
+					$destination.='/';
+				}
+				
+		      	$file_ext = strtolower(strrchr($file['file_name'],'.'));
+		      	$file_ext = substr($file_ext,1);
+				$new_file = $name.'.'.$file_ext;
+		
+				$config['image_library'] = 'gd2';
+				$config['source_image'] = $file['full_path'];
+				$config['source_image'] = $file['full_path'];
+				$config['maintain_ratio'] = $ratio;
+				$config['width'] = $width;
+				$config['height'] = $height;
+		
+				$this->load->library('image_lib', $config);
+			
+				if ($this->image_lib->resize())
+				{
+					$this->image_lib->clear();
+					return $new_file;
+				}
+				return FALSE;
+			}
+
+			return FALSE;
+		}
+
 }
