@@ -96,10 +96,6 @@ class Cy_base_form_model extends CI_Model
 	 function form_definition($options = array())
 	 {
 	 	// all the data defined as in the previous comments
-	 	
-	 	$local_options = array();
-		
-		$options = array_merge($options, $local_options);
 
 		$this->set_options($options);
 	 }
@@ -179,7 +175,6 @@ class Cy_base_form_model extends CI_Model
 		{
 			$this->auto_save = $auto_save;
 		}
-		
 
 		//add rules of the form validation
 		$this->add_rules();
@@ -205,6 +200,9 @@ class Cy_base_form_model extends CI_Model
 	 
 	 protected function check_errors($fields = NULL)
 	 {
+	 	
+		$return_bool = TRUE;
+		
 	 	if($fields === NULL)
 		{
 			$fields = $this->fields;
@@ -222,18 +220,47 @@ class Cy_base_form_model extends CI_Model
 		if($this->form_validation->run() === FALSE)
 		{
 
-			$this->error = validation_errors();
+			$return_bool = FALSE;
+
+			if(validation_errors() != '')
+			{
+				$this->error = validation_errors();
+			}
 			
 			foreach($fields as $field)
 			{
-				$field->set_error(form_error($field->get_id()));
+				if(form_error($field->get_id()) != '')
+				{
+					$field->set_error(form_error($field->get_id()));
+				}
 			}
-
-			return FALSE;
 			
 		}
+		
+		// check the special callbacks that the fields have
+		// if there is an error in one of them it will return an array
+		// of strings with all the errors
+		
+		/*foreach($fields as $field)
+		{
+			
+			$error_callbacks = $field->execute_callbacks('after');
 
-		return TRUE;
+			if($error_callbacks)
+			{
+				
+				foreach($error_callbacks as $err)
+				{
+					$this->error.= $err;
+				}
+
+				$field->set_error($error_callbacks);
+				
+				$return_bool = FALSE;
+			}
+		}*/
+		
+		return $return_bool;
 
 	 }
 	 
@@ -386,7 +413,8 @@ class Cy_base_form_model extends CI_Model
 		}
 		
 		$options['id'] = $field_id;
-		if(!array_key_exists('name', $options))
+		
+		if(!array_key_exists('name', $options) && $this->fields[$field_id]->get_parameter('name') === NULL)
 		{
 			$options['name'] = $options['id'];
 		}
@@ -556,6 +584,16 @@ class Cy_base_form_model extends CI_Model
 
 		return $field->show();
 		
+	}
+	
+	function get_fields($names_only = TRUE)
+	{
+		if ($names_only === TRUE)
+		{
+			return array_keys($this->fields);
+		}
+		
+		return $this->fields;
 	}
 	
 	protected function get_message($id, $additional_string = NULL)
